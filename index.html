@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#3b5bdb">
+<title>Attendance Calculator</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Attendance Calculator</h1>
+    <p class="sub">Saved only on this device. Works offline.</p>
+  </header>
+  <section class="card">
+    <label for="target">Required attendance (%)</label>
+    <input id="target" type="number" inputmode="numeric" min="0" max="100" step="1" value="75">
+    <p id="target-error" class="error" role="alert"></p>
+  </section>
+  <section class="card">
+    <h2 id="form-title">Add subject</h2>
+    <form id="form" novalidate>
+      <input type="hidden" id="edit-id">
+      <label for="name">Subject name</label>
+      <input id="name" required maxlength="60" autocomplete="off">
+      <div class="row">
+        <div><label for="attended">Attended</label><input id="attended" type="number" inputmode="numeric" min="0" step="1" required></div>
+        <div><label for="total">Total held</label><input id="total" type="number" inputmode="numeric" min="0" step="1" required></div>
+      </div>
+      <p id="form-error" class="error" role="alert"></p>
+      <div class="actions">
+        <button type="submit" id="save">Add subject</button>
+        <button type="button" id="cancel" class="secondary" hidden>Cancel</button>
+      </div>
+    </form>
+  </section>
+  <section aria-labelledby="list-title">
+    <h2 id="list-title">Subjects</h2>
+    <p id="empty" class="muted">No subjects yet. Add one above.</p>
+    <ul id="list" aria-live="polite"></ul>
+  </section>
+</main>
+<script src="./calc.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

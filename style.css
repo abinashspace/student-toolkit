@@ -1,0 +1,23 @@
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f4f6fb;color:#1c2333;line-height:1.45}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:1.6rem;margin:.5rem 0 0}h2{font-size:1.1rem;margin:0 0 .75rem}
+.sub,.muted{color:#5c667a;margin:.25rem 0 1rem}
+.card,li{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+label{display:block;font-weight:600;font-size:.9rem;margin:.5rem 0 .25rem}
+input{width:100%;font-size:1rem;padding:10px 12px;border:1px solid #c5cbd8;border-radius:10px;background:#fff;color:inherit}
+input:focus,button:focus-visible{outline:3px solid #91a7ff;outline-offset:1px}
+.row{display:flex;gap:12px}.row>div{flex:1}
+.actions{display:flex;gap:10px;margin-top:12px}
+button{font-size:1rem;padding:10px 16px;border:0;border-radius:10px;background:#3b5bdb;color:#fff;cursor:pointer;min-height:44px}
+button.secondary{background:#e7ebf5;color:#1c2333}button.danger{background:#fdecec;color:#b42318}
+.error{color:#b42318;margin:.4rem 0 0;font-size:.9rem;min-height:0}.error:empty{display:none}
+ul{list-style:none;padding:0;margin:0}
+li .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+li h3{margin:0;font-size:1.05rem;word-break:break-word}
+.pct{font-size:1.4rem;font-weight:700}
+.bar{height:8px;background:#e7ebf5;border-radius:4px;margin:8px 0;overflow:hidden}.bar span{display:block;height:100%;background:#2f9e44}
+li.bad .bar span{background:#e03131}
+.status{margin:.25rem 0 .5rem;font-weight:600}.ok{color:#2b8a3e}.warn{color:#c92a2a}
+li .actions{margin-top:6px}li button{padding:8px 14px;font-size:.9rem}
+@media (prefers-color-scheme:dark){body{background:#12151c;color:#e6e9ef}.card,li{background:#1c212b;box-shadow:none}input{background:#12151c;border-color:#3a4252}.sub,.muted{color:#9aa3b5}button.secondary,.bar{background:#2a3140;color:#e6e9ef}button.danger{background:#3b1d1d;color:#ffa8a8}.ok{color:#69db7c}.warn{color:#ff8787}.error{color:#ff8787}}
