@@ -45,6 +45,24 @@
     const wrap = h('div', { class: 'ring-wrap' }, svg, h('span', { class: 'ring-text', text }));
     return wrap;
   }
+  // One line-icon set (lucide-style paths), one stroke; size comes from CSS.
+  const ICONS = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18M6 6l12 12"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    more: '<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+    chevron: '<path d="m9 18 6-6-6-6"/>',
+    attendance: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
+    gpa: '<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
+    timetable: '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/>',
+    exams: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/>',
+  };
+  function icon(name, cls) {
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('class', 'ic' + (cls ? ' ' + cls : ''));
+    svg.innerHTML = ICONS[name];
+    return svg;
+  }
   const plural = (n, w, pl) => n + ' ' + (n === 1 ? w : (pl || w + 's'));
   const now = () => new Date();
   const todayKey = () => S.dateKey(now());
@@ -115,11 +133,11 @@
   // =====================================================================
   function message(s) {
     const p = targetOf(s), r = C.analyze(s.attended, s.total, p);
-    if (s.total === 0) return 'No classes held yet.';
-    if (r.status === 'unlimited') return 'Target is 0% — any absence is fine.';
-    if (r.status === 'safe') return r.canMiss === 0 ? 'On target — you can’t miss the next class.' : 'You can miss ' + plural(r.canMiss, 'class', 'classes') + ' and stay on target.';
-    if (r.status === 'impossible') return '100% is no longer reachable — a class was missed.';
-    return 'Attend the next ' + plural(r.mustAttend, 'class', 'classes') + ' in a row to reach ' + p + '%.';
+    if (s.total === 0) return 'No classes held yet';
+    if (r.status === 'unlimited') return 'Target is 0%, so any absence is fine';
+    if (r.status === 'safe') return r.canMiss === 0 ? 'On target, but you can’t miss the next class' : 'You can miss ' + plural(r.canMiss, 'class', 'classes') + ' and stay on target';
+    if (r.status === 'impossible') return '100% is no longer reachable after a missed class';
+    return 'Attend the next ' + plural(r.mustAttend, 'class', 'classes') + ' in a row to reach ' + p + '%';
   }
   function mark(id, present, slotId) {
     const s = subjectById(id); if (!s) return;
@@ -160,13 +178,13 @@
               h('span', { class: 'muted small', text: s.attended + '/' + s.total + ' · target ' + p + '%' + (s.target !== null ? ' (custom)' : '') })),
             h('p', { class: 'msg', text: message(s) })),
           h('button', { type: 'button', class: 'icon-btn ghosty', 'aria-label': 'Edit ' + s.name, onclick: () => openSubject(s.id) },
-            h('span', { 'aria-hidden': 'true', text: '⋯' }))),
+            icon('more'))),
         h('div', { class: 'bar', 'aria-hidden': 'true' },
           h('span', { class: 'fill', style: 'width:' + (frac * 100).toFixed(2) + '%' }),
           p > 0 && p < 100 ? h('span', { class: 'tick', style: 'left:' + p + '%' }) : null),
         h('div', { class: 'mark-row' },
-          h('button', { type: 'button', class: 'btn present', 'aria-label': 'Mark present in ' + s.name, onclick: () => mark(s.id, true) }, h('span', { 'aria-hidden': 'true', text: '✓' }), ' Present'),
-          h('button', { type: 'button', class: 'btn absent', 'aria-label': 'Mark absent in ' + s.name, onclick: () => mark(s.id, false) }, h('span', { 'aria-hidden': 'true', text: '✕' }), ' Absent')));
+          h('button', { type: 'button', class: 'btn present', 'aria-label': 'Mark present in ' + s.name, onclick: () => mark(s.id, true) }, icon('check'), 'Present'),
+          h('button', { type: 'button', class: 'btn absent', 'aria-label': 'Mark absent in ' + s.name, onclick: () => mark(s.id, false) }, icon('x'), 'Absent')));
       list.append(li);
     }
   }
@@ -178,47 +196,48 @@
     const risk = subs.filter((s) => C.status(s.attended, s.total, targetOf(s)) === 'risk');
     const border = subs.filter((s) => C.status(s.attended, s.total, targetOf(s)) === 'borderline');
     const overallSt = t === 0 ? 'none' : risk.length ? 'risk' : border.length ? 'borderline' : 'safe';
-    // Overall
-    d.append(h('div', { class: 'tile overall' },
-      ring(t ? a / t : 0, 'st-' + overallSt, t ? C.percentText(a, t).replace('%', '') : '—', '64px'),
-      h('div', {}, h('p', { class: 'tile-label', text: 'Overall attendance' }),
-        h('p', { class: 'tile-value', text: t ? C.percentText(a, t) : 'No classes yet' }),
-        h('p', { class: 'muted small', text: subs.length ? plural(subs.length, 'subject') + ' · ' + a + '/' + t + ' classes' : 'Add subjects to begin' }))));
-    // Category tiles (quick access, like a shop's category grid)
+    // Overall: the one bright element on the screen
+    d.append(h('div', { class: 'overall' },
+      ring(t ? a / t : 0, 'st-' + overallSt, t ? C.percentText(a, t).replace('%', '') : '—'),
+      h('div', { class: 'overall-text' },
+        h('p', { class: 'overall-label', text: 'Overall attendance' }),
+        h('p', { class: 'overall-value', text: t ? C.percentText(a, t) : 'No classes yet' }),
+        h('p', { class: 'overall-meta', text: subs.length ? plural(subs.length, 'subject') + ' · ' + a + ' of ' + t + ' classes' : 'Add subjects to begin' }))));
+    // Category tiles (quick access)
     const g = gp(), cg = G.cgpa(g.semesters, g.grades, g.countFailed);
     const todayCount = state.timetable.filter((x) => x.day === now().getDay()).length;
-    const upcomingCount = S.splitExams(state.exams, now()).upcoming.length;
+    const { upcoming } = S.splitExams(state.exams, now());
     const cats = [
-      ['attendance', '📚', 'Attendance', subs.length ? plural(subs.length, 'subject') : 'Add subjects', () => { const el = document.querySelector('#panel-attendance .section-head'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }],
-      ['gpa', '🎓', 'GPA & CGPA', cg.value === null ? 'Add grades' : 'CGPA ' + G.fmt(cg.value), () => showTab('gpa')],
-      ['timetable', '🗓️', 'Timetable', todayCount ? plural(todayCount, 'class', 'classes') + ' today' : 'Nothing today', () => { selDay = now().getDay(); showTab('timetable'); }],
-      ['exams', '⏳', 'Exams', upcomingCount ? upcomingCount + ' upcoming' : 'None yet', () => showTab('exams')],
+      ['attendance', 'Attendance', subs.length ? plural(subs.length, 'subject') : 'Add subjects', () => { const el = document.querySelector('#panel-attendance .section-head'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }],
+      ['gpa', 'GPA', cg.value === null ? 'Add grades' : 'CGPA ' + G.fmt(cg.value), () => showTab('gpa')],
+      ['timetable', 'Timetable', todayCount ? todayCount + ' today' : 'None today', () => { selDay = now().getDay(); showTab('timetable'); }],
+      ['exams', 'Exams', upcoming.length ? upcoming.length + ' upcoming' : 'None yet', () => showTab('exams')],
     ];
     d.append(h('div', { class: 'cats', role: 'group', 'aria-label': 'Quick access' },
-      cats.map(([key, art, name, sub, go]) => h('button', { type: 'button', class: 'cat cat-' + key, onclick: go },
-        h('span', { class: 'cat-art', 'aria-hidden': 'true', text: art }),
+      cats.map(([key, name, sub, go]) => h('button', { type: 'button', class: 'cat cat-' + key, onclick: go },
+        h('span', { class: 'cat-art' }, icon(key)),
         h('span', { class: 'cat-name', text: name }),
         h('span', { class: 'cat-sub', text: sub })))));
-    // At risk
-    d.append(h('button', { type: 'button', class: 'tile ' + (risk.length ? 'st-risk' : 'st-safe'), onclick: () => { const el = risk[0] && document.querySelector('[data-subject="' + risk[0].id + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } },
-      h('p', { class: 'tile-label', text: 'At risk' }),
-      h('p', { class: 'tile-value', text: risk.length ? plural(risk.length, 'subject') : (subs.length ? 'All good' : '—') }),
-      h('p', { class: 'muted small clamp', text: risk.length ? risk.map((s) => s.name).join(', ') : border.length ? border.length + ' borderline' : 'Nothing below target' })));
-    // Next class
+    // Today summary: one card, one row per item, nothing truncated
     const n = S.currentAndNext(state.timetable, now());
     const nc = n.current || n.next;
-    d.append(h('button', { type: 'button', class: 'tile', onclick: () => { selDay = now().getDay(); showTab('timetable'); } },
-      h('p', { class: 'tile-label', text: n.current ? 'Now in class' : 'Next class today' }),
-      h('p', { class: 'tile-value clamp', text: nc ? slotName(nc) : (state.timetable.length ? 'Done for today' : 'No timetable') }),
-      h('p', { class: 'muted small', text: nc ? (n.current ? 'until ' + fmtTime(nc.end) : fmtTime(nc.start)) + (nc.room ? ' · ' + nc.room : '') : (state.timetable.length ? 'No more classes' : 'Add your classes') })));
-    // Next exam
-    const { upcoming } = S.splitExams(state.exams, now());
     const ex = upcoming[0];
     const cd = ex && S.countdown(ex.date, ex.time, now());
-    d.append(h('button', { type: 'button', class: 'tile' + (cd && cd.days <= 3 ? ' st-risk' : ''), onclick: () => showTab('exams') },
-      h('p', { class: 'tile-label', text: 'Next exam' }),
-      h('p', { class: 'tile-value clamp', text: ex ? ex.name : 'None scheduled' }),
-      h('p', { class: 'muted small', text: ex ? S.countdownText(cd, !!ex.time) + ' · ' + fmtDate(ex.date) : 'Add exam dates' })));
+    const row = (cls, label, value, meta, go) => h('button', { type: 'button', class: 'sum-row ' + cls, onclick: go },
+      h('span', { class: 'sum-text' },
+        h('span', { class: 'sum-label', text: label }),
+        h('span', { class: 'sum-value', text: value }),
+        h('span', { class: 'sum-meta', text: meta })),
+      icon('chevron', 'sum-chev'));
+    d.append(h('div', { class: 'card summary' },
+      row(risk.length ? 'st-risk' : 'st-safe', 'At risk', risk.length ? plural(risk.length, 'subject') : (subs.length ? 'All subjects on target' : 'No subjects yet'),
+        risk.length ? risk.map((s) => s.name).join(', ') : border.length ? border.length + ' borderline' : 'Nothing below target',
+        () => { const el = risk[0] && document.querySelector('[data-subject="' + risk[0].id + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }),
+      row('', n.current ? 'Now in class' : 'Next class today', nc ? slotName(nc) : (state.timetable.length ? 'Done for today' : 'No timetable yet'),
+        nc ? (n.current ? 'Until ' + fmtTime(nc.end) : fmtTime(nc.start)) + (nc.room ? ' · ' + nc.room : '') : (state.timetable.length ? 'No more classes' : 'Add your classes'),
+        () => { selDay = now().getDay(); showTab('timetable'); }),
+      row(cd && cd.days <= 3 ? 'st-risk' : '', 'Next exam', ex ? ex.name : 'None scheduled',
+        ex ? S.countdownText(cd, !!ex.time) + ' · ' + fmtDate(ex.date) : 'Add exam dates', () => showTab('exams'))));
   }
 
   // Target stepper
@@ -363,7 +382,7 @@
           h('button', { type: 'button', class: 'btn ghost sm', onclick: () => {
             sem.courses.push({ id: Store.uid(), name: '', credits: 3, grade: '' }); save(); renderGpa();
             const inputs = document.querySelectorAll('[data-sem="' + sem.id + '"] .course:last-child input'); if (inputs[0]) inputs[0].focus();
-          } }, '＋ Add course'),
+          } }, icon('plus'), 'Add course'),
           h('span', { class: 'spacer' }),
           h('button', { type: 'button', class: 'btn danger-ghost sm', onclick: () => {
             if (!confirm('Delete "' + sem.name + '" and its ' + plural(sem.courses.length, 'course') + '?')) return;
@@ -455,7 +474,7 @@
         h('p', { class: 'tile-value', text: slotName(s) }),
         h('p', { class: 'muted small', text: fmtTime(s.start) + ' – ' + fmtTime(s.end) + (s.room ? ' · ' + s.room : '') + (cn.current && cn.next ? ' · then ' + slotName(cn.next) + ' at ' + fmtTime(cn.next.start) : '') })));
     } else if (isToday && cn.today.length) {
-      banner.append(h('div', { class: 'card now-card' }, h('p', { class: 'tile-label', text: 'All done' }), h('p', { class: 'tile-value', text: 'No more classes today 🎉' })));
+      banner.append(h('div', { class: 'card now-card' }, h('p', { class: 'tile-label', text: 'All done' }), h('p', { class: 'tile-value', text: 'No more classes today' })));
     }
     const slots = S.slotsForDay(state.timetable, selDay);
     const list = $('slots'); list.textContent = '';
@@ -471,10 +490,10 @@
       let markUi = null;
       if (isToday && subj) {
         markUi = m
-          ? h('span', { class: 'chip ' + (m.kind === 'P' ? 'st-safe' : 'st-risk'), text: m.kind === 'P' ? '✓ Marked present' : '✕ Marked absent' })
+          ? h('span', { class: 'chip ' + (m.kind === 'P' ? 'st-safe' : 'st-risk'), }, icon(m.kind === 'P' ? 'check' : 'x'), m.kind === 'P' ? 'Marked present' : 'Marked absent')
           : h('div', { class: 'mark-row compact' },
-            h('button', { type: 'button', class: 'btn present sm', 'aria-label': 'Mark present in ' + subj.name, onclick: () => mark(subj.id, true, slot.id) }, '✓ Present'),
-            h('button', { type: 'button', class: 'btn absent sm', 'aria-label': 'Mark absent in ' + subj.name, onclick: () => mark(subj.id, false, slot.id) }, '✕ Absent'));
+            h('button', { type: 'button', class: 'btn present sm', 'aria-label': 'Mark present in ' + subj.name, onclick: () => mark(subj.id, true, slot.id) }, icon('check'), 'Present'),
+            h('button', { type: 'button', class: 'btn absent sm', 'aria-label': 'Mark absent in ' + subj.name, onclick: () => mark(subj.id, false, slot.id) }, icon('x'), 'Absent'));
       }
       list.append(h('li', { class: 'slot c' + slotColor(slot) + (isNow ? ' now' : '') + (isNext ? ' next' : '') + (past && !isNow ? ' past' : '') },
         h('div', { class: 'time' }, h('span', { text: fmtTime(slot.start) }), h('span', { class: 'muted small', text: fmtTime(slot.end) })),
@@ -484,7 +503,7 @@
               h('h3', { text: slotName(slot) }),
               h('p', { class: 'muted small', text: [slot.room, subj ? null : 'Not linked to a subject'].filter(Boolean).join(' · ') || ' ' })),
             isNow ? h('span', { class: 'chip st-brand', text: 'Now' }) : isNext ? h('span', { class: 'chip', text: 'Next' }) : null,
-            h('button', { type: 'button', class: 'icon-btn ghosty', 'aria-label': 'Edit ' + slotName(slot) + ' at ' + fmtTime(slot.start), onclick: () => openSlot(slot.id) }, h('span', { 'aria-hidden': 'true', text: '⋯' }))),
+            h('button', { type: 'button', class: 'icon-btn ghosty', 'aria-label': 'Edit ' + slotName(slot) + ' at ' + fmtTime(slot.start), onclick: () => openSlot(slot.id) }, icon('more'))),
           markUi)));
     });
   }
@@ -553,7 +572,7 @@
         h('h3', { text: ex.name }),
         h('p', { class: 'muted small', text: fmtDate(ex.date) + (ex.time ? ' · ' + fmtTime(ex.time) : '') + (ex.room ? ' · ' + ex.room : '') }),
         done ? null : h('p', { class: 'small strong', 'data-countdown': ex.id, text: S.countdownText(cd, !!ex.time) })),
-      h('button', { type: 'button', class: 'icon-btn ghosty', 'aria-label': 'Edit ' + ex.name, onclick: () => openExam(ex.id) }, h('span', { 'aria-hidden': 'true', text: '⋯' })));
+      h('button', { type: 'button', class: 'icon-btn ghosty', 'aria-label': 'Edit ' + ex.name, onclick: () => openExam(ex.id) }, icon('more')));
   }
   function renderExams() {
     const { upcoming, done } = S.splitExams(state.exams, now());
@@ -637,7 +656,7 @@
     toast('Backup imported', () => { state = Store.normalize(JSON.parse(snapshot)); draft = null; save(); applyTheme(); renderAll(); });
   });
   $('reset').addEventListener('click', () => {
-    if (!confirm('Erase ALL subjects, GPA records, timetable and exams on this device? Export a backup first if unsure.')) return;
+    if (!confirm('Erase all subjects, GPA records, timetable and exams on this device? Export a backup first if unsure.')) return;
     const snapshot = JSON.stringify(state);
     state = Store.defaults(); draft = null;
     try { localStorage.removeItem(Store.V1_KEY); } catch (e) { /* ignore */ }
