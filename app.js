@@ -184,6 +184,21 @@
       h('div', {}, h('p', { class: 'tile-label', text: 'Overall attendance' }),
         h('p', { class: 'tile-value', text: t ? C.percentText(a, t) : 'No classes yet' }),
         h('p', { class: 'muted small', text: subs.length ? plural(subs.length, 'subject') + ' · ' + a + '/' + t + ' classes' : 'Add subjects to begin' }))));
+    // Category tiles (quick access, like a shop's category grid)
+    const g = gp(), cg = G.cgpa(g.semesters, g.grades, g.countFailed);
+    const todayCount = state.timetable.filter((x) => x.day === now().getDay()).length;
+    const upcomingCount = S.splitExams(state.exams, now()).upcoming.length;
+    const cats = [
+      ['attendance', '📚', 'Attendance', subs.length ? plural(subs.length, 'subject') : 'Add subjects', () => { const el = document.querySelector('#panel-attendance .section-head'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }],
+      ['gpa', '🎓', 'GPA & CGPA', cg.value === null ? 'Add grades' : 'CGPA ' + G.fmt(cg.value), () => showTab('gpa')],
+      ['timetable', '🗓️', 'Timetable', todayCount ? plural(todayCount, 'class', 'classes') + ' today' : 'Nothing today', () => { selDay = now().getDay(); showTab('timetable'); }],
+      ['exams', '⏳', 'Exams', upcomingCount ? upcomingCount + ' upcoming' : 'None yet', () => showTab('exams')],
+    ];
+    d.append(h('div', { class: 'cats', role: 'group', 'aria-label': 'Quick access' },
+      cats.map(([key, art, name, sub, go]) => h('button', { type: 'button', class: 'cat cat-' + key, onclick: go },
+        h('span', { class: 'cat-art', 'aria-hidden': 'true', text: art }),
+        h('span', { class: 'cat-name', text: name }),
+        h('span', { class: 'cat-sub', text: sub })))));
     // At risk
     d.append(h('button', { type: 'button', class: 'tile ' + (risk.length ? 'st-risk' : 'st-safe'), onclick: () => { const el = risk[0] && document.querySelector('[data-subject="' + risk[0].id + '"]'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } },
       h('p', { class: 'tile-label', text: 'At risk' }),
@@ -284,6 +299,7 @@
     });
     $('scale-name').textContent = '· ' + (g.preset === 'custom' ? 'Custom' : G.PRESETS[g.preset].name);
     renderTargetHelper(c);
+    renderDash(); // keep the dashboard's CGPA tile in sync
   }
   function renderTargetHelper(c) {
     const g = gp(), out = $('t-result');
@@ -420,7 +436,7 @@
     const today = now().getDay();
     DAY_ORDER.forEach((d) => {
       const count = state.timetable.filter((s) => s.day === d).length;
-      wrap.append(h('button', { type: 'button', class: 'day' + (d === today ? ' today' : ''), 'aria-pressed': d === selDay, 'aria-label': S.DAYS[d] + (d === today ? ' (today)' : '') + ', ' + plural(count, 'class', 'classes'),
+      wrap.append(h('button', { type: 'button', class: 'day' + (d === today ? ' today' : ''), 'aria-pressed': String(d === selDay), 'aria-label': S.DAYS[d] + (d === today ? ' (today)' : '') + ', ' + plural(count, 'class', 'classes'),
         onclick: () => { selDay = d; renderTimetable(); } },
         h('span', { text: SHORT[d] }), h('span', { class: 'dots', 'aria-hidden': 'true', text: count ? '•'.repeat(Math.min(count, 4)) : ' ' })));
     });
@@ -590,7 +606,7 @@
     const t = state.settings.theme, root = document.documentElement;
     if (t === 'system') delete root.dataset.theme; else root.dataset.theme = t;
     const dark = t === 'dark' || (t === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
-    $('theme-color').setAttribute('content', dark ? '#0f1218' : '#f5f6fb');
+    $('theme-color').setAttribute('content', dark ? '#0a1f66' : '#0050ff');
   }
   if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', applyTheme); }
   $('open-settings').addEventListener('click', () => {

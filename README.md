@@ -18,3 +18,7 @@ Data from v1 (attendance-only) is migrated automatically; the old v1 entry is ke
 ```
 for t in test/*.js; do node "$t"; done
 ```
+
+## Credits
+
+UI font: [Outfit](https://github.com/Outfitio/Outfit-Fonts), vendored in `fonts/` under the SIL Open Font License (see `fonts/OFL.txt`). The theme is inspired by quick-commerce grocery apps; no third-party logos, names or images are used.
