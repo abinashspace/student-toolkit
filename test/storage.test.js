@@ -65,8 +65,13 @@ assert.strictEqual(st.gpa.semesters.length, 1); assert.strictEqual(st.gpa.semest
 assert.deepStrictEqual(st.gpa.target, { cgpa: null, credits: null });
 assert.strictEqual(st.timetable.length, 1); assert.strictEqual(st.timetable[0].subjectId, 's1');
 assert.deepStrictEqual(st.exams.map((e) => e.name), ['Good']);
-assert.strictEqual(st.settings.theme, 'system'); assert.strictEqual(st.settings.clock24, false);
+assert.strictEqual(st.settings.theme, 'light'); assert.strictEqual(st.settings.clock24, false);
 assert.strictEqual(imp.dropped, 2 + 1 + 1 + 1 + 3 + 3); // subjects, scale, course, semester, slots, exams
+// Theme: light by default; a saved 'system' migrates to light; explicit dark is kept
+assert.strictEqual(Store.normalize({}).settings.theme, 'light');
+assert.strictEqual(Store.normalize({ settings: { theme: 'system' } }).settings.theme, 'light');
+assert.strictEqual(Store.normalize({ settings: { theme: 'dark' } }).settings.theme, 'dark');
+assert.strictEqual(Store.normalize({ settings: { theme: 'light' } }).settings.theme, 'light');
 // Import never carries prototype pollution keys into state
 imp = Store.parseImport('{"app":"student-toolkit","version":2,"data":{"__proto__":{"polluted":1},"attendance":{"target":75,"subjects":[]}}}');
 assert(imp.ok); assert.strictEqual({}.polluted, undefined); assert.strictEqual(imp.state.polluted, undefined);

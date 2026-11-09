@@ -604,11 +604,10 @@
   // =====================================================================
   function applyTheme() {
     const t = state.settings.theme, root = document.documentElement;
-    if (t === 'system') delete root.dataset.theme; else root.dataset.theme = t;
-    const dark = t === 'dark' || (t === 'system' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+    const dark = t === 'dark'; // light unless the user explicitly picks dark
+    root.dataset.theme = dark ? 'dark' : 'light';
     $('theme-color').setAttribute('content', dark ? '#0a1f66' : '#0050ff');
   }
-  if (window.matchMedia) { const mq = matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', applyTheme); }
   $('open-settings').addEventListener('click', () => {
     document.querySelectorAll('input[name="theme"]').forEach((r) => { r.checked = r.value === state.settings.theme; });
     $('clock24').checked = state.settings.clock24; $('io-msg').textContent = '';

@@ -22,7 +22,7 @@
       gpa: { preset: 'ten', grades: G.clonePreset('ten'), countFailed: true, semesters: [], target: { cgpa: null, credits: null } },
       timetable: [],
       exams: [],
-      settings: { theme: 'system', clock24: false },
+      settings: { theme: 'light', clock24: false },
     };
   }
 
@@ -103,7 +103,7 @@
     d.timetable = normTimetable(raw.timetable, ids, ctx);
     d.exams = normExams(raw.exams, ctx);
     const st = raw.settings || {};
-    d.settings.theme = ['system', 'light', 'dark'].includes(st.theme) ? st.theme : 'system';
+    d.settings.theme = st.theme === 'dark' ? 'dark' : 'light'; // light by default; old 'system' -> 'light'; dark only when chosen
     d.settings.clock24 = st.clock24 === true;
     return d;
   }

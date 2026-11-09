@@ -5,7 +5,7 @@
   src: url("./fonts/outfit-latin.woff2") format("woff2");
 }
 :root {
-  --bg: #fdf6ef; --surface: #ffffff; --surface-2: #f2f5fc; --text: #1c1f2e; --muted: #5e6272; --line: #ece5dd;
+  --bg: #ffffff; --surface: #ffffff; --surface-2: #f3f5f9; --text: #1c1f2e; --muted: #5e6272; --line: #e5e8ef;
   --brand: #0050ff; --brand-2: #2a6bff; --brand-soft: #e8f0ff; --on-brand: #ffffff; --brand-fill: #0050ff;
   --accent: #ff5200; --accent-ink: #b93d00; --accent-soft: #ffe9dc;
   --head-1: #0042d6; --head-2: #0050ff; --head-3: #2a6bff;
@@ -14,24 +14,11 @@
   --cat-attendance: #e6eeff; --cat-gpa: #ffe8d9; --cat-timetable: #ddf5e8; --cat-exams: #f1e7ff;
   --c0: #0050ff; --c1: #0891b2; --c2: #db2777; --c3: #ff5200; --c4: #16a34a; --c5: #9333ea; --c6: #ca8a04; --c7: #64748b;
   --radius: 20px;
-  --shadow: 0 1px 2px rgba(28, 31, 46, .06), 0 8px 24px rgba(28, 31, 46, .08);
+  --shadow: 0 1px 2px rgba(28, 31, 46, .06), 0 6px 18px rgba(28, 31, 46, .07);
   --shadow-sm: 0 1px 2px rgba(28, 31, 46, .08), 0 3px 8px rgba(28, 31, 46, .06);
   --font: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --tabbar-h: 66px; --ease: cubic-bezier(.2, .8, .2, 1);
   color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0b0f1a; --surface: #151b2b; --surface-2: #1f2740; --text: #eef1f8; --muted: #a3abc2; --line: #2a3350;
-    --brand: #7aa3ff; --brand-2: #4d86ff; --brand-soft: #1b2a55; --on-brand: #ffffff; --brand-fill: #2a62f5;
-    --accent: #ff7a3d; --accent-ink: #ff9a6a; --accent-soft: #3a1f12;
-    --head-1: #0a1f66; --head-2: #0c33a8; --head-3: #1546d1;
-    --safe: #4ade80; --safe-soft: #12301f; --warn: #fbbf24; --warn-soft: #3a2c0b; --risk: #ff8a8a; --risk-soft: #3d1717;
-    --none: #8d95ab; --none-soft: #232836;
-    --cat-attendance: #1b2a55; --cat-gpa: #3a2214; --cat-timetable: #12301f; --cat-exams: #2b1d47;
-    --shadow: 0 1px 0 rgba(255, 255, 255, .03), 0 8px 24px rgba(0, 0, 0, .35); --shadow-sm: 0 1px 0 rgba(255, 255, 255, .03);
-    color-scheme: dark;
-  }
 }
 :root[data-theme="dark"] {
   --bg: #0b0f1a; --surface: #151b2b; --surface-2: #1f2740; --text: #eef1f8; --muted: #a3abc2; --line: #2a3350;
@@ -174,7 +161,6 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; min-hei
 /* Bright "offer"-style badge for at-risk subjects */
 .chip.st-risk { background: var(--risk); color: #fff; }
 :root[data-theme="dark"] .chip.st-risk { color: #2a0b0b; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .chip.st-risk { color: #2a0b0b; } }
 
 /* Ring */
 .ring-wrap { position: relative; width: 58px; height: 58px; flex: none; display: grid; place-items: center; }
