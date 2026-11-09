@@ -625,7 +625,7 @@
     const t = state.settings.theme, root = document.documentElement;
     const dark = t === 'dark'; // light unless the user explicitly picks dark
     root.dataset.theme = dark ? 'dark' : 'light';
-    $('theme-color').setAttribute('content', dark ? '#0a1f66' : '#0050ff');
+    $('theme-color').setAttribute('content', dark ? '#0a2380' : '#0a2fb8');
   }
   $('open-settings').addEventListener('click', () => {
     document.querySelectorAll('input[name="theme"]').forEach((r) => { r.checked = r.value === state.settings.theme; });

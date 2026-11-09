@@ -1,4 +1,4 @@
-/* Student Toolkit v3.2. Mobile-first, white by default, all assets local (Outfit vendored under ./fonts, OFL).
+/* Student Toolkit v3.3. Mobile-first, white by default, all assets local (Outfit vendored under ./fonts, OFL).
    Design pass informed by "unslop" by Damir Sokolovsky (github.com/heydamir/unslop, CC BY 4.0):
    4px spacing scale, one radius per size, quiet chrome, one bright element, weights 400-600, sentence case. */
 @font-face {
@@ -17,13 +17,13 @@
   /* Neutral ramp (cool grey) + brand blue accent + orange signature */
   --bg: #ffffff; --surface: #ffffff; --surface-2: #f3f5f9; --text: #171a26; --text-2: #4b5263; --muted: #5f6676;
   --line: rgba(23, 26, 38, .09); --line-strong: rgba(23, 26, 38, .14);
-  --brand: #0050ff; --brand-soft: #ebf1ff; --on-brand: #ffffff; --brand-fill: #0050ff; --brand-hover: #0046e0;
+  --brand: #0a2fb8; --brand-soft: #e9edfb; --on-brand: #ffffff; --brand-fill: #0a2fb8; --brand-hover: #08279a;
   --accent: #ff5200; --accent-ink: #b93d00; --accent-soft: #fff0e6;
-  --head: #0050ff;
+  --head: #0a2fb8;
   --safe: #0e7a47; --safe-soft: #e6f6ee; --warn: #985a00; --warn-soft: #fff4dc; --risk: #c0142a; --risk-soft: #fdecee;
   --none: #6b7080; --none-soft: #f1f2f5;
-  --cat-attendance: #eaf1ff; --cat-gpa: #fff0e6; --cat-timetable: #e7f6ee; --cat-exams: #f3edff;
-  --c0: #0050ff; --c1: #0891b2; --c2: #db2777; --c3: #ff5200; --c4: #16a34a; --c5: #9333ea; --c6: #ca8a04; --c7: #64748b;
+  --cat-attendance: #e8ecfa; --cat-gpa: #fff0e6; --cat-timetable: #e7f6ee; --cat-exams: #f3edff;
+  --c0: #0a2fb8; --c1: #0891b2; --c2: #db2777; --c3: #ff5200; --c4: #16a34a; --c5: #9333ea; --c6: #ca8a04; --c7: #64748b;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
   --shadow-float: 0 8px 24px rgba(0, 0, 0, .08);
   --font: "Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -34,12 +34,12 @@
 :root[data-theme="dark"] {
   --bg: #0b0d14; --surface: #11141c; --surface-2: #1a1e28; --text: #eef0f5; --text-2: #b4bac8; --muted: #a3a9b8;
   --line: rgba(238, 240, 245, .09); --line-strong: rgba(238, 240, 245, .16);
-  --brand: #8fb0ff; --brand-soft: #18223d; --on-brand: #ffffff; --brand-fill: #2a62f5; --brand-hover: #3a6ff7;
+  --brand: #9db0ff; --brand-soft: #182040; --on-brand: #ffffff; --brand-fill: #2747d6; --brand-hover: #3354e0;
   --accent: #ff7a3d; --accent-ink: #ff9a6a; --accent-soft: #33200f;
-  --head: #0c2f99;
+  --head: #0a2380;
   --safe: #4cc38a; --safe-soft: #10291d; --warn: #f2b84b; --warn-soft: #2f240c; --risk: #ff8a8a; --risk-soft: #351619;
   --none: #8d95ab; --none-soft: #1a1e28;
-  --cat-attendance: #18223d; --cat-gpa: #33200f; --cat-timetable: #10291d; --cat-exams: #251c3d;
+  --cat-attendance: #182040; --cat-gpa: #33200f; --cat-timetable: #10291d; --cat-exams: #251c3d;
   --shadow-sm: none; --shadow-float: 0 8px 24px rgba(0, 0, 0, .4);
   color-scheme: dark;
 }
@@ -373,11 +373,11 @@ dialog .muted.small { margin-top: var(--s1); }
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast[hidden] { display: none; }
-.toast button { font: inherit; font-weight: 600; color: #9db9ff; background: none; border: 0; padding: 0 var(--s3); border-radius: var(--r-ctl); cursor: pointer; min-height: var(--tap); }
+.toast button { font: inherit; font-weight: 600; color: #9db0ff; background: none; border: 0; padding: 0 var(--s3); border-radius: var(--r-ctl); cursor: pointer; min-height: var(--tap); }
 .toast button:hover { background: rgba(255, 255, 255, .08); }
 .toast button[hidden] { display: none; }
 :root[data-theme="dark"] .toast { background: #eef0f5; color: #171a26; }
-:root[data-theme="dark"] .toast button { color: #0046e0; }
+:root[data-theme="dark"] .toast button { color: #0a2fb8; }
 @media (min-width: 760px) { .toast { bottom: var(--s6); } }
 
 @media (max-width: 380px) {
