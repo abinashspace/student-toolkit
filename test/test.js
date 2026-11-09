@@ -45,7 +45,7 @@ const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.we
 assert.strictEqual(manifest.start_url.startsWith('./'), true); assert.strictEqual(manifest.scope, './');
 for (const i of manifest.icons) { assert(i.src.startsWith('./')); assert(fs.existsSync(path.join(__dirname, '..', i.src)), i.src); assert(assets.includes(i.src), 'icon not cached ' + i.src); }
 assert(manifest.icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable'));
-assert(/CACHE = 'student-toolkit-v3\.2/.test(sw), 'SW cache version bumped');
+assert(/CACHE = 'student-toolkit-v3\.3/.test(sw), 'SW cache version bumped');
 // Files referenced from the stylesheet (vendored font) exist and are cached for offline use
 const css = fs.readFileSync(path.join(__dirname, '../style.css'), 'utf8');
 const cssUrls = [...css.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((m) => m[1]);
