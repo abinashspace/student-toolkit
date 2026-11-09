@@ -22,10 +22,28 @@ assert.strictEqual(C.analyze(100000, 100000, 1).canMiss, 9900000);
 assert.strictEqual(C.analyze(0, 100000, 99).mustAttend, 9900000);
 for (const bad of [[-1, 2, 75], [3, 2, 75], [1.5, 2, 75], [1, 2, 101], [1, 2, -1], [1, 2, 75.5], [NaN, 1, 75], ['1', 2, 75], [1, 100001, 75]])
   assert.strictEqual(C.analyze(...bad).status, 'invalid', JSON.stringify(bad));
+// Traffic-light status buckets
+assert.strictEqual(C.status(0, 0, 75), 'none');
+assert.strictEqual(C.status(7, 10, 75), 'risk');
+assert.strictEqual(C.status(3, 4, 75), 'borderline'); // canMiss 0
+assert.strictEqual(C.status(8, 10, 75), 'borderline'); // canMiss 0 (8/11 < 75%)
+assert.strictEqual(C.status(4, 5, 75), 'borderline'); // canMiss 0 (4/6 < 75%)
+assert.strictEqual(C.status(16, 20, 75), 'borderline'); // canMiss 1
+assert.strictEqual(C.status(18, 20, 75), 'safe');
+assert.strictEqual(C.status(0, 5, 0), 'safe');
+assert.strictEqual(C.status(5, 5, 100), 'borderline');
+assert.strictEqual(C.status(4, 5, 100), 'risk');
+assert.strictEqual(C.status(5, 3, 75), 'none');
 // SW assets exist and are relative
 const sw = fs.readFileSync(path.join(__dirname, '../sw.js'), 'utf8');
 const assets = JSON.parse(sw.match(/ASSETS = (\[.*?\])/)[1].replace(/'/g, '"'));
 for (const a of assets) { assert(a.startsWith('./')); if (a !== './') assert(fs.existsSync(path.join(__dirname, '..', a)), a); }
 const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
 assert(!/(src|href)="\//.test(html), 'no root-absolute URLs');
+for (const m of html.matchAll(/(?:src|href)="(\.\/[^"#]*)"/g)) { assert(fs.existsSync(path.join(__dirname, '..', m[1])), 'missing ' + m[1]); if (m[1] !== './') assert(assets.includes(m[1]), 'not cached by SW: ' + m[1]); }
+const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.webmanifest'), 'utf8'));
+assert.strictEqual(manifest.start_url.startsWith('./'), true); assert.strictEqual(manifest.scope, './');
+for (const i of manifest.icons) { assert(i.src.startsWith('./')); assert(fs.existsSync(path.join(__dirname, '..', i.src)), i.src); assert(assets.includes(i.src), 'icon not cached ' + i.src); }
+assert(manifest.icons.some((i) => i.sizes === '512x512' && i.purpose === 'maskable'));
+assert(/CACHE = 'student-toolkit-v2/.test(sw), 'SW cache version bumped');
 console.log(`OK: ${n} exhaustive cases + boundaries + SW asset checks`);

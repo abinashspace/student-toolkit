@@ -2,46 +2,284 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#3b5bdb">
-<title>Attendance Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5f6fb" id="theme-color">
+<meta name="description" content="Attendance, GPA/CGPA, timetable and exam countdowns. Works offline, saved only on your device.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Toolkit">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Student Toolkit</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="./icons/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="stylesheet" href="./style.css">
+<script>
+  // Apply saved theme before first paint to avoid a flash.
+  try { var t = JSON.parse(localStorage.getItem('student-toolkit-v2')).settings.theme; if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Attendance Calculator</h1>
-    <p class="sub">Saved only on this device. Works offline.</p>
-  </header>
-  <section class="card">
-    <label for="target">Required attendance (%)</label>
-    <input id="target" type="number" inputmode="numeric" min="0" max="100" step="1" value="75">
-    <p id="target-error" class="error" role="alert"></p>
+<a class="skip" href="#main">Skip to content</a>
+<header class="appbar">
+  <div class="brand">
+    <img src="./icons/icon.svg" alt="" width="34" height="34">
+    <div>
+      <h1>Student Toolkit</h1>
+      <p id="today-label" class="muted small"></p>
+    </div>
+  </div>
+  <button type="button" class="icon-btn" id="open-settings" aria-label="Settings and backup">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+  </button>
+</header>
+
+<nav class="tabbar" role="tablist" aria-label="Sections">
+  <button type="button" role="tab" id="tab-attendance" aria-controls="panel-attendance" data-tab="attendance">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span>Attendance</span>
+  </button>
+  <button type="button" role="tab" id="tab-gpa" aria-controls="panel-gpa" data-tab="gpa">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg><span>GPA</span>
+  </button>
+  <button type="button" role="tab" id="tab-timetable" aria-controls="panel-timetable" data-tab="timetable">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg><span>Timetable</span>
+  </button>
+  <button type="button" role="tab" id="tab-exams" aria-controls="panel-exams" data-tab="exams">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg><span>Exams</span>
+  </button>
+</nav>
+
+<main id="main">
+  <!-- ATTENDANCE -->
+  <section id="panel-attendance" role="tabpanel" aria-labelledby="tab-attendance" class="panel">
+    <div class="dash" id="dash"></div>
+
+    <div class="card target-card">
+      <div>
+        <label for="target" class="label">Required attendance</label>
+        <p class="muted small">Default for all subjects. You can override per subject.</p>
+      </div>
+      <div class="stepper">
+        <button type="button" class="icon-btn" id="target-dec" aria-label="Decrease required attendance">−</button>
+        <input id="target" type="number" inputmode="numeric" min="0" max="100" step="1" value="75" aria-describedby="target-error">
+        <span aria-hidden="true">%</span>
+        <button type="button" class="icon-btn" id="target-inc" aria-label="Increase required attendance">+</button>
+      </div>
+      <p id="target-error" class="error" role="alert"></p>
+    </div>
+
+    <div class="section-head">
+      <h2>Subjects</h2>
+      <button type="button" class="btn primary sm" id="add-subject"><span aria-hidden="true">＋</span> Add subject</button>
+    </div>
+    <div id="att-empty" class="empty" hidden>
+      <div class="empty-art" aria-hidden="true">📚</div>
+      <h3>Track your first subject</h3>
+      <p class="muted">Add a subject with classes attended so far, then tap <b>Present</b> or <b>Absent</b> after each class.</p>
+      <button type="button" class="btn primary" data-action="add-subject">Add a subject</button>
+    </div>
+    <ul id="subjects" class="list"></ul>
   </section>
-  <section class="card">
-    <h2 id="form-title">Add subject</h2>
-    <form id="form" novalidate>
-      <input type="hidden" id="edit-id">
-      <label for="name">Subject name</label>
-      <input id="name" required maxlength="60" autocomplete="off">
+
+  <!-- GPA -->
+  <section id="panel-gpa" role="tabpanel" aria-labelledby="tab-gpa" class="panel" hidden>
+    <div class="hero card" id="gpa-hero"></div>
+
+    <div class="card">
+      <h2 class="h3">Target CGPA helper</h2>
       <div class="row">
-        <div><label for="attended">Attended</label><input id="attended" type="number" inputmode="numeric" min="0" step="1" required></div>
-        <div><label for="total">Total held</label><input id="total" type="number" inputmode="numeric" min="0" step="1" required></div>
+        <div><label class="label" for="t-cgpa">Target CGPA</label><input id="t-cgpa" type="number" inputmode="decimal" step="0.01" min="0" placeholder="e.g. 8.5"></div>
+        <div><label class="label" for="t-credits">Next semester credits</label><input id="t-credits" type="number" inputmode="decimal" step="0.5" min="0" placeholder="e.g. 22"></div>
       </div>
-      <p id="form-error" class="error" role="alert"></p>
+      <p id="t-result" class="result" aria-live="polite"></p>
+    </div>
+
+    <div class="section-head">
+      <h2>Semesters</h2>
+      <button type="button" class="btn primary sm" id="add-sem"><span aria-hidden="true">＋</span> Add semester</button>
+    </div>
+    <div id="gpa-empty" class="empty" hidden>
+      <div class="empty-art" aria-hidden="true">🎓</div>
+      <h3>Add your first semester</h3>
+      <p class="muted">Enter each course with its credits and grade. SGPA and CGPA update instantly.</p>
+      <button type="button" class="btn primary" data-action="add-sem">Add a semester</button>
+    </div>
+    <div id="semesters"></div>
+
+    <details class="card scale" id="scale-card">
+      <summary><span class="h3">Grading scale</span> <span class="muted small" id="scale-name"></span></summary>
+      <div class="row">
+        <div>
+          <label class="label" for="preset">Preset</label>
+          <select id="preset">
+            <option value="ten">10-point (O=10, A+=9 … RA=0)</option>
+            <option value="four">4.0 scale (A=4 … F=0)</option>
+            <option value="custom">Custom</option>
+          </select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="count-failed"> Count failed (0-point) courses in GPA</label>
+      <p class="muted small">Some universities leave arrear/RA courses out of GPA until cleared. Untick that if yours does.</p>
+      <table class="grades">
+        <caption class="sr-only">Grades and points</caption>
+        <thead><tr><th scope="col">Grade</th><th scope="col">Points</th><th scope="col"><span class="sr-only">Remove</span></th></tr></thead>
+        <tbody id="grades"></tbody>
+      </table>
+      <p id="scale-error" class="error" role="alert"></p>
       <div class="actions">
-        <button type="submit" id="save">Add subject</button>
-        <button type="button" id="cancel" class="secondary" hidden>Cancel</button>
+        <button type="button" class="btn ghost sm" id="add-grade">＋ Add grade</button>
+        <button type="button" class="btn primary sm" id="save-scale">Save scale</button>
       </div>
-    </form>
+    </details>
   </section>
-  <section aria-labelledby="list-title">
-    <h2 id="list-title">Subjects</h2>
-    <p id="empty" class="muted">No subjects yet. Add one above.</p>
-    <ul id="list" aria-live="polite"></ul>
+
+  <!-- TIMETABLE -->
+  <section id="panel-timetable" role="tabpanel" aria-labelledby="tab-timetable" class="panel" hidden>
+    <div class="days" id="days" role="group" aria-label="Day of week"></div>
+    <div id="now-banner"></div>
+    <div class="section-head">
+      <h2 id="day-title">Today</h2>
+      <button type="button" class="btn primary sm" id="add-slot"><span aria-hidden="true">＋</span> Add class</button>
+    </div>
+    <div id="tt-empty" class="empty" hidden>
+      <div class="empty-art" aria-hidden="true">🗓️</div>
+      <h3 id="tt-empty-title">No classes this day</h3>
+      <p class="muted">Add your classes with start and end times. Link them to a subject to mark attendance in one tap.</p>
+      <button type="button" class="btn primary" data-action="add-slot">Add a class</button>
+    </div>
+    <ul id="slots" class="list timeline"></ul>
+  </section>
+
+  <!-- EXAMS -->
+  <section id="panel-exams" role="tabpanel" aria-labelledby="tab-exams" class="panel" hidden>
+    <div class="section-head">
+      <h2>Upcoming exams</h2>
+      <button type="button" class="btn primary sm" id="add-exam"><span aria-hidden="true">＋</span> Add exam</button>
+    </div>
+    <div id="ex-empty" class="empty" hidden>
+      <div class="empty-art" aria-hidden="true">⏳</div>
+      <h3>No upcoming exams</h3>
+      <p class="muted">Add an exam date to get a live countdown here and on your dashboard.</p>
+      <button type="button" class="btn primary" data-action="add-exam">Add an exam</button>
+    </div>
+    <ul id="exams" class="list"></ul>
+    <details class="done-exams" id="done-wrap" hidden>
+      <summary id="done-title">Done</summary>
+      <ul id="exams-done" class="list"></ul>
+    </details>
   </section>
 </main>
+
+<!-- Dialogs -->
+<dialog id="subject-dialog" aria-labelledby="subject-title">
+  <form method="dialog" id="subject-form" novalidate>
+    <h2 id="subject-title">Add subject</h2>
+    <input type="hidden" id="s-id">
+    <label class="label" for="s-name">Subject name</label>
+    <input id="s-name" maxlength="60" autocomplete="off" required>
+    <div class="row">
+      <div><label class="label" for="s-attended">Attended</label><input id="s-attended" type="number" inputmode="numeric" min="0" step="1" value="0"></div>
+      <div><label class="label" for="s-total">Total held</label><input id="s-total" type="number" inputmode="numeric" min="0" step="1" value="0"></div>
+    </div>
+    <label class="label" for="s-target">Target for this subject (%)</label>
+    <input id="s-target" type="number" inputmode="numeric" min="0" max="100" step="1" placeholder="Use default">
+    <p class="muted small">Leave blank to use the default target.</p>
+    <p id="s-error" class="error" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="s-delete" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary" id="s-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="slot-dialog" aria-labelledby="slot-title">
+  <form method="dialog" id="slot-form" novalidate>
+    <h2 id="slot-title">Add class</h2>
+    <input type="hidden" id="c-id">
+    <label class="label" for="c-day">Day</label>
+    <select id="c-day"></select>
+    <div class="row">
+      <div><label class="label" for="c-start">Starts</label><input id="c-start" type="time" required></div>
+      <div><label class="label" for="c-end">Ends</label><input id="c-end" type="time" required></div>
+    </div>
+    <label class="label" for="c-subject">Subject</label>
+    <select id="c-subject"></select>
+    <div id="c-label-wrap">
+      <label class="label" for="c-label">Class name</label>
+      <input id="c-label" maxlength="60" autocomplete="off" placeholder="e.g. Library hour">
+    </div>
+    <label class="label" for="c-room">Room (optional)</label>
+    <input id="c-room" maxlength="30" autocomplete="off">
+    <p id="c-error" class="error" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="c-delete" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="exam-dialog" aria-labelledby="exam-title">
+  <form method="dialog" id="exam-form" novalidate>
+    <h2 id="exam-title">Add exam</h2>
+    <input type="hidden" id="e-id">
+    <label class="label" for="e-name">Exam</label>
+    <input id="e-name" maxlength="60" autocomplete="off" list="subject-names" required placeholder="e.g. Data Structures">
+    <datalist id="subject-names"></datalist>
+    <div class="row">
+      <div><label class="label" for="e-date">Date</label><input id="e-date" type="date" required></div>
+      <div><label class="label" for="e-time">Time (optional)</label><input id="e-time" type="time"></div>
+    </div>
+    <label class="label" for="e-room">Venue (optional)</label>
+    <input id="e-room" maxlength="30" autocomplete="off">
+    <p id="e-error" class="error" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="btn danger" id="e-delete" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" data-close>Cancel</button>
+      <button type="submit" class="btn primary">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="settings-dialog" aria-labelledby="settings-title">
+  <form method="dialog">
+    <h2 id="settings-title">Settings</h2>
+    <fieldset class="seg">
+      <legend class="label">Theme</legend>
+      <label><input type="radio" name="theme" value="system"> System</label>
+      <label><input type="radio" name="theme" value="light"> Light</label>
+      <label><input type="radio" name="theme" value="dark"> Dark</label>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="clock24"> 24-hour clock</label>
+    <h3 class="h3">Backup</h3>
+    <p class="muted small">Everything is saved only in this browser. Export a backup before clearing browser data or switching phones.</p>
+    <div class="actions wrap">
+      <button type="button" class="btn ghost" id="export">Export backup (.json)</button>
+      <button type="button" class="btn ghost" id="import-btn">Import backup</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+    <p id="io-msg" class="small" role="status"></p>
+    <h3 class="h3">Danger zone</h3>
+    <button type="button" class="btn danger" id="reset">Reset all data</button>
+    <p class="muted small about">Student Toolkit v2 · offline-first · no account, no tracking.</p>
+    <div class="actions"><span class="spacer"></span><button type="submit" class="btn primary">Done</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <span id="toast-msg"></span>
+  <button type="button" id="toast-undo">Undo</button>
+</div>
+
 <script src="./calc.js"></script>
+<script src="./gpa.js"></script>
+<script src="./schedule.js"></script>
+<script src="./store.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>
