@@ -26,6 +26,15 @@
     // min k: 100(a+k) >= p(t+k)
     return { status: 'short', meets: false, mustAttend: Math.ceil((target * total - attended * 100) / (100 - target)) };
   }
-  const api = { validate, percentText, analyze };
+  // Traffic-light bucket for UI: none (no classes yet), safe, borderline (on target but <=1 spare class), risk.
+  function status(attended, total, target) {
+    const r = analyze(attended, total, target);
+    if (r.status === 'invalid') return 'none';
+    if (total === 0) return 'none';
+    if (r.status === 'unlimited') return 'safe';
+    if (!r.meets) return 'risk';
+    return r.canMiss <= 1 ? 'borderline' : 'safe';
+  }
+  const api = { validate, percentText, analyze, status };
   if (typeof module !== 'undefined') module.exports = api; else root.AttendanceCalc = api;
 })(this);
