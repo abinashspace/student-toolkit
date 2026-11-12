@@ -1,4 +1,4 @@
-/* Student Toolkit v3.3. Mobile-first, white by default, all assets local (Outfit vendored under ./fonts, OFL).
+/* Student Toolkit v3.4. Mobile-first, white by default, all assets local (Outfit vendored under ./fonts, OFL).
    Design pass informed by "unslop" by Damir Sokolovsky (github.com/heydamir/unslop, CC BY 4.0):
    4px spacing scale, one radius per size, quiet chrome, one bright element, weights 400-600, sentence case. */
 @font-face {
@@ -236,7 +236,8 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; min-hei
 .stepper input { width: 56px; text-align: center; font-weight: 600; font-size: var(--t-lg); padding: 0; min-height: 40px; border: 0; background: transparent; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
 .stepper > span { color: var(--text-2); margin-right: var(--s1); }
 .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.target-card .error { flex-basis: 100%; margin: 0; }
+.target-card .error, .target-card .hint { flex-basis: 100%; margin: 0; }
+.target-card .hint { color: var(--muted); }
 
 /* Subjects */
 .subject-top { display: flex; gap: var(--s3); align-items: flex-start; }
@@ -262,6 +263,7 @@ input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; min-hei
 /* Empty states */
 .empty { text-align: center; padding: var(--s8) var(--s6); border: 1px dashed var(--line-strong); border-radius: var(--r-card); display: grid; gap: var(--s2); justify-items: center; }
 .empty[hidden] { display: none; }
+[hidden] { display: none !important; }
 .empty-art { width: 56px; height: 56px; display: grid; place-items: center; border-radius: var(--r-card); background: var(--brand-soft); color: var(--brand); margin-bottom: var(--s2); }
 .empty-art .ic { width: 24px; height: 24px; }
 .empty .btn { margin-top: var(--s3); }
@@ -388,3 +390,11 @@ dialog .muted.small { margin-top: var(--s1); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* Classification + pass calculator */
+#class-card { margin-top: var(--s4); }
+#class-card .result { margin-top: var(--s3); }
+.pass-card { margin-top: var(--section); }
+.pass-card .label:first-of-type { margin-top: var(--s4); }
+#pass-internal-hint { margin-top: var(--s2); }
+#pass-internal-hint:empty { display: none; }

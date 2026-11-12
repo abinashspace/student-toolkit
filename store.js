@@ -19,7 +19,8 @@
       version: 2,
       attendance: { target: 75, subjects: [] },
       marks: { date: '', items: {} },
-      gpa: { preset: 'ten', grades: G.clonePreset('ten'), countFailed: true, semesters: [], target: { cgpa: null, credits: null } },
+      gpa: { preset: 'ten', grades: G.clonePreset('ten'), countFailed: true, semesters: [], target: { cgpa: null, credits: null }, classification: { arrearsHistory: false, attendancePrevented: false } },
+      pass: { scheme: 'r2021-theory', internal: null, internalMax: null, examMax: null },
       timetable: [],
       exams: [],
       settings: { theme: 'light', clock24: false },
@@ -40,17 +41,27 @@
     }
     return out;
   }
+  const PRESET_KEYS = ['ten', 'four', 'au2021', 'au2017', 'custom'];
+  const PASS_SCHEMES = ['r2017-theory', 'r2021-theory', 'r2021-lab', 'r2021-theory-lab', 'custom'];
+  function isMark100(n) { return typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 100 && Math.round(n * 100) === n * 100; }
   function normGpa(g, ctx) {
     const d = defaults().gpa; if (!g || typeof g !== 'object') return d;
     const grades = Array.isArray(g.grades) ? g.grades.map((x) => ({ label: str(x && x.label, 6), points: x && x.points })) : null;
     const scaleOk = grades && !G.validateScale(grades);
     if (g.grades !== undefined && !scaleOk) ctx.dropped++;
+    // Keep a saved preset as-is when it is known; never silently switch an existing scale to an AU preset.
+    const preset = scaleOk && PRESET_KEYS.includes(g.preset) ? g.preset : (scaleOk ? 'custom' : 'ten');
+    const au = G.isAuPreset(preset);
     const out = {
-      preset: scaleOk && ['ten', 'four', 'custom'].includes(g.preset) ? g.preset : (scaleOk ? 'custom' : 'ten'),
+      preset,
       grades: scaleOk ? grades : d.grades,
-      countFailed: g.countFailed !== false,
+      countFailed: typeof g.countFailed === 'boolean' ? g.countFailed : !au,
       semesters: [],
       target: { cgpa: null, credits: null },
+      classification: {
+        arrearsHistory: !!(g.classification && g.classification.arrearsHistory),
+        attendancePrevented: !!(g.classification && g.classification.attendancePrevented),
+      },
     };
     for (const s of Array.isArray(g.semesters) ? g.semesters.slice(0, 40) : []) {
       if (!s || typeof s !== 'object') { ctx.dropped++; continue; }
@@ -88,6 +99,16 @@
     }
     return out;
   }
+  function normPass(p) {
+    const d = defaults().pass;
+    if (!p || typeof p !== 'object') return d;
+    const scheme = PASS_SCHEMES.includes(p.scheme) ? p.scheme : d.scheme;
+    const out = { scheme, internal: null, internalMax: null, examMax: null };
+    if (isMark100(p.internal)) out.internal = p.internal;
+    if (isMark100(p.internalMax) && p.internalMax > 0) out.internalMax = p.internalMax;
+    if (isMark100(p.examMax) && p.examMax > 0) out.examMax = p.examMax;
+    return out;
+  }
   function normalize(raw, ctx) {
     ctx = ctx || { dropped: 0 };
     const d = defaults(); if (!raw || typeof raw !== 'object') return d;
@@ -100,6 +121,7 @@
       d.marks.date = raw.marks.date;
     }
     d.gpa = normGpa(raw.gpa, ctx);
+    d.pass = normPass(raw.pass);
     d.timetable = normTimetable(raw.timetable, ids, ctx);
     d.exams = normExams(raw.exams, ctx);
     const st = raw.settings || {};

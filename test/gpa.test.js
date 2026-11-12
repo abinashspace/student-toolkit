@@ -70,4 +70,49 @@ for (let C = 0; C <= 30; C += 3) for (let P10 = 0; P10 <= C * 10; P10 += 7) for 
   } else if (res.status === 'impossible') assert((P10 + 10 * N) / (C + N) < T);
   else if (res.status === 'guaranteed') assert(P10 / (C + N) >= T - 1e-9);
 }
-console.log('OK: GPA/CGPA + target helper tests');
+
+
+// Anna University presets
+const au21 = G.clonePreset('au2021'), au17 = G.clonePreset('au2017');
+assert.strictEqual(G.validateScale(au21), null); assert.strictEqual(G.validateScale(au17), null);
+assert(G.isAuPreset('au2021') && G.isAuPreset('au2017') && !G.isAuPreset('ten') && !G.isAuPreset('custom'));
+assert.strictEqual(G.pointsFor(au21, 'C'), 5); assert.strictEqual(G.pointsFor(au21, 'U'), 0);
+assert.strictEqual(G.pointsFor(au21, 'SA'), 0); assert.strictEqual(G.pointsFor(au21, 'WD'), 0);
+assert.strictEqual(G.pointsFor(au17, 'C'), null); assert.strictEqual(G.pointsFor(au17, 'RA'), 0);
+assert.strictEqual(G.pointsFor(au17, 'W'), 0); assert.strictEqual(G.maxPoints(au21), 10);
+assert.strictEqual(G.auRules('au2021').firstClass, 6.5); assert.strictEqual(G.auRules('au2017').firstClass, 7);
+// U/SA/WD excluded until cleared (countFailed=false)
+r = G.sgpa([{ credits: 4, grade: 'O' }, { credits: 3, grade: 'U' }, { credits: 1, grade: 'SA' }, { credits: 2, grade: 'WD' }], au21, false);
+close(r.value, 10, 'U/SA/WD excluded'); assert.strictEqual(r.failed, 3); assert.strictEqual(r.credits, 4);
+r = G.sgpa([{ credits: 4, grade: 'O' }, { credits: 4, grade: 'U' }], au21, true); close(r.value, 5, 'U counted when asked');
+r = G.cgpa([{ courses: [{ credits: 3, grade: 'A' }, { credits: 3, grade: 'RA' }] }], au17, false);
+close(r.value, 8, 'RA excluded'); assert.strictEqual(r.failed, 1);
+
+// Percentage: official formula is CGPA × 10, never (CGPA − 0.5) × 10
+let pct = G.percentage(8.25, 'au2021'); assert.strictEqual(pct.status, 'ok'); assert.strictEqual(pct.text, '82.50'); close(pct.value, 82.5, 'pct');
+pct = G.percentage(8.5, 'au2021'); assert.strictEqual(pct.text, '85.00');
+assert.notStrictEqual(G.percentage(8.5, 'au2021').value, (8.5 - 0.5) * 10, 'must not use CGPA-0.5');
+assert.strictEqual(G.percentage(8.249, 'au2021').text, '82.50'); // rounded CGPA 8.25 × 10
+assert.strictEqual(G.percentage(8.25, 'au2017').status, 'no-clause');
+assert.strictEqual(G.percentage(8.25, 'ten').status, 'n/a');
+assert.strictEqual(G.percentage(null, 'au2021').status, 'empty');
+
+// Classification tracker
+const cl = (over) => G.classify(Object.assign({ preset: 'au2021', cgpa: 8.6, arrearsHistory: false, attendancePrevented: false, currentFailed: 0 }, over));
+assert.strictEqual(cl({}).status, 'ok'); assert.strictEqual(cl({}).current, 'distinction');
+assert.strictEqual(cl({ currentFailed: 1 }).current, 'first'); assert(cl({ currentFailed: 1 }).distinctionBlocked);
+assert.strictEqual(cl({ arrearsHistory: true }).current, 'first');
+assert.strictEqual(cl({ attendancePrevented: true }).current, 'first');
+assert.strictEqual(cl({ cgpa: 8.5 }).current, 'distinction');
+assert.strictEqual(cl({ cgpa: 8.49 }).current, 'first');
+assert.strictEqual(cl({ cgpa: 6.5 }).current, 'first');
+assert.strictEqual(cl({ cgpa: 6.49 }).current, 'second');
+assert.strictEqual(cl({ cgpa: 6.49 }).needed.target, 8.5); // distinction still possible
+assert.strictEqual(cl({ cgpa: 6.49, arrearsHistory: true }).needed.target, 6.5); // first class only
+assert.strictEqual(cl({ cgpa: 7, arrearsHistory: true }).needed, null); // already first, distinction blocked
+assert.strictEqual(G.classify({ preset: 'au2017', cgpa: 6.9 }).current, 'second'); // first class is 7.00
+assert.strictEqual(G.classify({ preset: 'au2017', cgpa: 7 }).current, 'first');
+assert.strictEqual(G.classify({ preset: 'ten', cgpa: 9 }).status, 'not-au');
+assert.strictEqual(G.classify({ preset: 'au2021' }).status, 'empty');
+console.log('OK: GPA/CGPA + target helper + AU tests');
+

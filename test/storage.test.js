@@ -75,4 +75,26 @@ assert.strictEqual(Store.normalize({ settings: { theme: 'light' } }).settings.th
 // Import never carries prototype pollution keys into state
 imp = Store.parseImport('{"app":"student-toolkit","version":2,"data":{"__proto__":{"polluted":1},"attendance":{"target":75,"subjects":[]}}}');
 assert(imp.ok); assert.strictEqual({}.polluted, undefined); assert.strictEqual(imp.state.polluted, undefined);
+
+// Existing 10-point data is not silently switched to an AU preset, and countFailed stays as saved
+const oldTen = Store.normalize({ gpa: { preset: 'ten', grades: Store.defaults().gpa.grades, countFailed: true, semesters: [{ name: 'S1', courses: [{ name: 'DS', credits: 4, grade: 'A+' }] }] } });
+assert.strictEqual(oldTen.gpa.preset, 'ten'); assert.strictEqual(oldTen.gpa.countFailed, true);
+assert.strictEqual(oldTen.gpa.classification.arrearsHistory, false);
+const oldCustom = Store.normalize({ gpa: { preset: 'custom', grades: [{ label: 'O', points: 10 }, { label: 'A', points: 8 }], countFailed: false, semesters: [] } });
+assert.strictEqual(oldCustom.gpa.preset, 'custom'); assert.strictEqual(oldCustom.gpa.countFailed, false);
+// AU presets round-trip; missing countFailed on an AU preset defaults to excluded
+const auState = Store.defaults();
+auState.gpa.preset = 'au2021'; auState.gpa.grades = require('../gpa.js').clonePreset('au2021'); auState.gpa.countFailed = false;
+auState.gpa.classification = { arrearsHistory: true, attendancePrevented: false };
+auState.pass = { scheme: 'r2021-lab', internal: 48, internalMax: null, examMax: null };
+assert.deepStrictEqual(Store.normalize(JSON.parse(Store.serialize(auState))), auState);
+let auImp = Store.parseImport(Store.exportData(auState, new Date('2026-11-12T04:00:00Z')));
+assert(auImp.ok); assert.strictEqual(auImp.state.gpa.preset, 'au2021'); assert.strictEqual(auImp.state.gpa.countFailed, false);
+assert.strictEqual(auImp.state.gpa.classification.arrearsHistory, true); assert.strictEqual(auImp.state.pass.scheme, 'r2021-lab');
+const auMissing = Store.normalize({ gpa: { preset: 'au2017', grades: require('../gpa.js').clonePreset('au2017'), semesters: [] } });
+assert.strictEqual(auMissing.gpa.countFailed, false);
+const tenMissing = Store.normalize({ gpa: { preset: 'ten', grades: Store.defaults().gpa.grades, semesters: [] } });
+assert.strictEqual(tenMissing.gpa.countFailed, true);
+assert.strictEqual(Store.normalize({ pass: { scheme: 'nope', internal: -1 } }).pass.scheme, 'r2021-theory');
+assert.strictEqual(Store.normalize({ pass: { scheme: 'custom', internal: 12, internalMax: 30, examMax: 70 } }).pass.internalMax, 30);
 console.log('OK: storage, migration and import tests');

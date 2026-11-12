@@ -62,11 +62,12 @@
       </div>
       <div class="stepper">
         <button type="button" class="icon-btn" id="target-dec" aria-label="Decrease required attendance">−</button>
-        <input id="target" type="number" inputmode="numeric" min="0" max="100" step="1" value="75" aria-describedby="target-error">
+        <input id="target" type="number" inputmode="numeric" min="0" max="100" step="1" value="75" aria-describedby="target-error au-att-hint">
         <span aria-hidden="true">%</span>
         <button type="button" class="icon-btn" id="target-inc" aria-label="Increase required attendance">+</button>
       </div>
       <p id="target-error" class="error" role="alert"></p>
+      <p class="muted small hint" id="au-att-hint">Anna University: 75% required; 65–74% only with a medical/sports certificate.</p>
     </div>
 
     <div class="section-head">
@@ -95,6 +96,14 @@
       <p id="t-result" class="result" aria-live="polite"></p>
     </div>
 
+    <div class="card" id="class-card" hidden>
+      <h2 class="h3">Degree classification</h2>
+      <p class="muted small">An estimate only, not an official classification. Official rules also include time limits and first-appearance conditions.</p>
+      <p id="class-result" class="result" aria-live="polite"></p>
+      <label class="check"><input type="checkbox" id="class-arrears"> I have a history of arrears (including ones later cleared)</label>
+      <label class="check"><input type="checkbox" id="class-attendance"> I was prevented from writing an exam due to shortage of attendance</label>
+    </div>
+
     <div class="section-head">
       <h2>Semesters</h2>
       <button type="button" class="btn primary sm" id="add-sem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add semester</button>
@@ -115,12 +124,14 @@
           <select id="preset">
             <option value="ten">10-point (O=10, A+=9 … RA=0)</option>
             <option value="four">4.0 scale (A=4 … F=0)</option>
+            <option value="au2021">Anna University R2021 (O–C, U=0)</option>
+            <option value="au2017">Anna University R2017 (O–B, RA=0)</option>
             <option value="custom">Custom</option>
           </select>
         </div>
       </div>
       <label class="check"><input type="checkbox" id="count-failed"> Count failed (0-point) courses in GPA</label>
-      <p class="muted small">Some universities leave arrear/RA courses out of GPA until cleared. Untick that if yours does.</p>
+      <p class="muted small" id="failed-hint">Some universities leave arrear/RA courses out of GPA until cleared. Untick that if yours does.</p>
       <table class="grades">
         <caption class="sr-only">Grades and points</caption>
         <thead><tr><th scope="col">Grade</th><th scope="col">Points</th><th scope="col"><span class="sr-only">Remove</span></th></tr></thead>
@@ -168,6 +179,27 @@
       <summary id="done-title">Done</summary>
       <ul id="exams-done" class="list"></ul>
     </details>
+
+    <div class="card pass-card" id="pass-card">
+      <h2 class="h3">End-semester marks needed</h2>
+      <p class="muted small">To pass: at least 50% of internal plus end-semester marks, and at least 45% in the end-semester exam (Anna University R2017 and R2021).</p>
+      <label class="label" for="pass-scheme">Course type</label>
+      <select id="pass-scheme"></select>
+      <div class="row" id="pass-custom" hidden>
+        <div>
+          <label class="label" for="pass-imax">Internal maximum</label>
+          <input id="pass-imax" type="number" inputmode="decimal" min="0.01" max="100" step="0.5" placeholder="e.g. 40">
+        </div>
+        <div>
+          <label class="label" for="pass-emax">End-semester maximum</label>
+          <input id="pass-emax" type="number" inputmode="decimal" min="0.01" max="100" step="0.5" placeholder="e.g. 60">
+        </div>
+      </div>
+      <label class="label" for="pass-internal">Internal marks</label>
+      <input id="pass-internal" type="number" inputmode="decimal" min="0" step="0.5" placeholder="e.g. 32" aria-describedby="pass-internal-hint">
+      <p class="muted small" id="pass-internal-hint"></p>
+      <p id="pass-result" class="result" aria-live="polite"></p>
+    </div>
   </section>
 </main>
 
@@ -265,7 +297,7 @@
     <p id="io-msg" class="small" role="status"></p>
     <h3 class="h3">Danger zone</h3>
     <button type="button" class="btn danger" id="reset">Reset all data</button>
-    <p class="muted small about">Student Toolkit v3.3 · offline-first · no account, no tracking.</p>
+    <p class="muted small about">Student Toolkit v3.4 · offline-first · no account, no tracking.</p>
     <div class="actions"><span class="spacer"></span><button type="submit" class="btn primary">Done</button></div>
   </form>
 </dialog>
@@ -277,6 +309,7 @@
 
 <script src="./calc.js"></script>
 <script src="./gpa.js"></script>
+<script src="./pass.js"></script>
 <script src="./schedule.js"></script>
 <script src="./store.js"></script>
 <script src="./app.js"></script>
