@@ -1,5 +1,5 @@
-const CACHE = 'student-toolkit-v3.3.0';
-const ASSETS = ['./', './index.html', './style.css', './calc.js', './gpa.js', './schedule.js', './store.js', './app.js', './fonts/outfit-latin.woff2', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
+const CACHE = 'student-toolkit-v3.4.0';
+const ASSETS = ['./', './index.html', './style.css', './calc.js', './gpa.js', './pass.js', './schedule.js', './store.js', './app.js', './fonts/outfit-latin.woff2', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', (e) => {
   // cache: 'reload' bypasses the HTTP cache so a new version never installs stale files.
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));

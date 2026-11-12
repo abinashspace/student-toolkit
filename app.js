@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  const C = window.AttendanceCalc, G = window.GpaCalc, S = window.Schedule, Store = window.Store;
+  const C = window.AttendanceCalc, G = window.GpaCalc, P = window.PassCalc, S = window.Schedule, Store = window.Store;
   const $ = (id) => document.getElementById(id);
   const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sun
   const SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -306,6 +306,7 @@
       h('div', {},
         h('p', { class: 'tile-label', text: 'CGPA' }),
         h('p', { class: 'big', text: G.fmt(c.value) + ' / ' + max }),
+        percentLine(c.value, g.preset),
         h('p', { class: 'muted small', text: c.credits ? plural(c.credits, 'credit') + ' counted across ' + plural(g.semesters.length, 'semester') : 'Add courses with credits and grades' }),
         c.skipped ? h('p', { class: 'muted small', text: plural(c.skipped, 'course') + ' skipped (no grade or 0 credits)' }) : null,
         c.failed && !g.countFailed ? h('p', { class: 'muted small', text: plural(c.failed, 'failed course') + ' left out of GPA' }) : null));
@@ -318,7 +319,15 @@
     });
     $('scale-name').textContent = '· ' + (g.preset === 'custom' ? 'Custom' : G.PRESETS[g.preset].name);
     renderTargetHelper(c);
+    renderClassification(c);
     renderDash(); // keep the dashboard's CGPA tile in sync
+  }
+  function percentLine(cgpa, preset) {
+    const r = G.percentage(cgpa, preset);
+    if (r.status === 'ok') return h('p', { class: 'muted small', text: 'Percentage ' + r.text + ' (CGPA × 10, ' + r.clause + ')' });
+    if (r.status === 'no-clause') return h('p', { class: 'muted small', text: 'The official R2017 regulations have no CGPA-to-percentage conversion clause.' });
+    if (r.status === 'empty') return h('p', { class: 'muted small', text: 'Percentage = CGPA × 10 once a CGPA is available (' + G.auRules(preset).clause + ').' });
+    return null;
   }
   function renderTargetHelper(c) {
     const g = gp(), out = $('t-result');
@@ -338,8 +347,53 @@
   ['t-cgpa', 't-credits'].forEach((id) => $(id).addEventListener('input', () => {
     const t = parseNum($('t-cgpa').value), c = parseNum($('t-credits').value);
     gp().target = { cgpa: Number.isFinite(t) ? t : null, credits: Number.isFinite(c) ? c : null };
-    save(); renderTargetHelper();
+    save(); renderTargetHelper(); renderClassification();
   }));
+  const CLASS_LABEL = { distinction: 'First Class with Distinction', first: 'First Class', second: 'Second Class' };
+  function renderClassification(c) {
+    const g = gp(), card = $('class-card'), out = $('class-result');
+    const au = G.isAuPreset(g.preset);
+    card.hidden = !au;
+    if (!au) return;
+    $('class-arrears').checked = g.classification.arrearsHistory;
+    $('class-attendance').checked = g.classification.attendancePrevented;
+    const tot = c || G.cgpa(g.semesters, g.grades, g.countFailed);
+    const r = G.classify({
+      cgpa: tot.value, preset: g.preset, currentFailed: tot.failed,
+      arrearsHistory: g.classification.arrearsHistory,
+      attendancePrevented: g.classification.attendancePrevented,
+    });
+    out.className = 'result';
+    const bits = [];
+    if (r.status === 'empty') {
+      bits.push('Add graded courses to see an estimate. Distinction needs a CGPA of at least ' + r.distinction.toFixed(2) + ' with no arrears and no attendance prevention. First Class needs at least ' + r.firstClass.toFixed(2) + '.');
+      if (r.distinctionBlocked) bits.push('Distinction is currently blocked by ' + r.blockers.join(', ') + '.');
+    } else {
+      bits.push('On track for ' + CLASS_LABEL[r.current] + ' (estimate).');
+      if (r.current === 'first' && r.distinctionBlocked) bits.push('Distinction is not available because of ' + r.blockers.join(', ') + '.');
+      if (r.current === 'second' && r.distinctionBlocked) bits.push('Distinction is not available because of ' + r.blockers.join(', ') + '.');
+      if (r.needed) {
+        bits.push('To reach ' + r.needed.label + ' you need a CGPA of at least ' + r.needed.target.toFixed(2) + '.');
+        const typed = parseNum($('t-credits').value);
+        const credits = Number.isFinite(typed) && typed > 0 ? typed : g.target.credits;
+        if (Number.isFinite(credits) && credits > 0) {
+          const th = G.targetHelper(tot, r.needed.target, credits, g.grades);
+          if (th.status === 'possible') bits.push('That means an SGPA of at least ' + th.required.toFixed(2) + ' over ' + plural(credits, 'credit') + ' next semester.');
+          else if (th.status === 'guaranteed') bits.push('You will stay at or above that whatever you score next semester.');
+          else if (th.status === 'impossible') bits.push('Not reachable next semester: even a perfect ' + th.max + ' takes your CGPA to about ' + (Math.floor(th.bestCgpa * 100 + 1e-7) / 100).toFixed(2) + '.');
+        } else {
+          bits.push('Enter next-semester credits in the helper above to see the SGPA you would need.');
+        }
+      }
+    }
+    bits.push('This is an estimate, not an official classification.');
+    out.textContent = bits.join(' ');
+    if (r.status === 'ok' && r.current === 'distinction') out.classList.add('st-safe');
+    else if (r.status === 'ok' && r.current === 'first') out.classList.add('st-borderline');
+    else if (r.status === 'ok') out.classList.add('st-risk');
+  }
+  $('class-arrears').addEventListener('change', () => { gp().classification.arrearsHistory = $('class-arrears').checked; save(); renderClassification(); });
+  $('class-attendance').addEventListener('change', () => { gp().classification.attendancePrevented = $('class-attendance').checked; save(); renderClassification(); });
 
   function gradeSelect(course) {
     const sel = h('select', { 'aria-label': 'Grade for ' + (course.name || 'course') });
@@ -405,7 +459,7 @@
   function renderScale() {
     const g = gp();
     if (!draft) draft = g.grades.map((x) => ({ ...x }));
-    $('preset').value = g.preset; $('count-failed').checked = g.countFailed;
+    $('preset').value = g.preset; $('count-failed').checked = g.countFailed; updateFailedHint();
     const body = $('grades'); body.textContent = '';
     draft.forEach((gr, i) => {
       const l = h('input', { value: gr.label, maxlength: 6, 'aria-label': 'Grade label ' + (i + 1) });
@@ -424,18 +478,26 @@
     $('scale-error').textContent = '';
     const g = gp(), prev = { preset: g.preset, grades: g.grades };
     const same = (k) => JSON.stringify(G.clonePreset(k)) === JSON.stringify(grades);
-    g.grades = grades; g.preset = same('ten') ? 'ten' : same('four') ? 'four' : 'custom';
+    g.grades = grades; g.preset = Object.keys(G.PRESETS).find((k) => same(k)) || 'custom';
     draft = null; save(); renderGpa();
     toast('Grading scale saved', () => { g.grades = prev.grades; g.preset = prev.preset; draft = null; save(); renderGpa(); });
   });
   $('preset').addEventListener('change', () => {
     const v = $('preset').value;
-    if (v === 'custom') { gp().preset = 'custom'; save(); renderGpaSummary(); return; }
-    const g = gp(), prev = { preset: g.preset, grades: g.grades };
-    g.grades = G.clonePreset(v); g.preset = v; draft = null; save(); renderGpa();
-    toast('Switched to ' + G.PRESETS[v].name, () => { g.grades = prev.grades; g.preset = prev.preset; draft = null; save(); renderGpa(); });
+    if (v === 'custom') { gp().preset = 'custom'; save(); renderGpaSummary(); updateFailedHint(); return; }
+    const g = gp(), prev = { preset: g.preset, grades: g.grades, countFailed: g.countFailed };
+    g.grades = G.clonePreset(v); g.preset = v; draft = null;
+    if (G.isAuPreset(v)) g.countFailed = false; // official AU rules exclude U/RA until cleared
+    save(); renderGpa();
+    toast('Switched to ' + G.PRESETS[v].name, () => { g.grades = prev.grades; g.preset = prev.preset; g.countFailed = prev.countFailed; draft = null; save(); renderGpa(); });
   });
   $('count-failed').addEventListener('change', () => { gp().countFailed = $('count-failed').checked; save(); renderGpaSummary(); });
+  function updateFailedHint() {
+    const au = G.isAuPreset(gp().preset);
+    $('failed-hint').textContent = au
+      ? 'Anna University excludes U/RA (and SA, W/WD) from GPA and CGPA until the course is cleared. That is already off for AU presets.'
+      : 'Some universities leave arrear/RA courses out of GPA until cleared. Untick that if yours does.';
+  }
 
   function renderGpa() {
     renderSemesters(); renderScale(); renderGpaSummary();
@@ -444,6 +506,7 @@
     if (document.activeElement !== $('t-credits')) $('t-credits').value = t.credits ?? '';
     $('t-cgpa').max = G.maxPoints(gp().grades);
     renderTargetHelper();
+    renderClassification();
   }
 
   // =====================================================================
@@ -665,10 +728,71 @@
   });
 
   // =====================================================================
+  // End-semester pass calculator
+  // =====================================================================
+  function fillPassSchemes() {
+    const sel = $('pass-scheme');
+    if (sel.options.length) return;
+    Object.values(P.SCHEMES).forEach((s) => sel.append(h('option', { value: s.id, text: s.name })));
+  }
+  function passWeights() {
+    return P.weights(state.pass.scheme, state.pass.internalMax, state.pass.examMax);
+  }
+  function renderPass() {
+    fillPassSchemes();
+    const p = state.pass, custom = p.scheme === 'custom';
+    if (document.activeElement !== $('pass-scheme')) $('pass-scheme').value = p.scheme;
+    $('pass-custom').hidden = !custom;
+    if (custom) {
+      if (document.activeElement !== $('pass-imax')) $('pass-imax').value = p.internalMax ?? '';
+      if (document.activeElement !== $('pass-emax')) $('pass-emax').value = p.examMax ?? '';
+    }
+    const w = passWeights();
+    const max = w.error ? null : w.internalMax;
+    if (document.activeElement !== $('pass-internal')) $('pass-internal').value = p.internal ?? '';
+    if (max != null) {
+      $('pass-internal').max = max;
+      $('pass-internal-hint').textContent = 'Out of ' + max + '.';
+    } else {
+      $('pass-internal').removeAttribute('max');
+      $('pass-internal-hint').textContent = w.error || 'Enter both maxima for a custom split.';
+    }
+    const out = $('pass-result'); out.className = 'result';
+    const r = P.needed({ scheme: p.scheme, internal: p.internal, internalMax: p.internalMax, examMax: p.examMax });
+    if (r.status === 'empty') { out.textContent = 'Enter your internal marks to see the end-semester score you need.'; return; }
+    if (r.status === 'invalid') { out.textContent = r.error; out.classList.add('st-risk'); return; }
+    if (r.status === 'impossible') {
+      out.textContent = 'Not possible: even 100% in the end-semester exam would give ' + r.maxTotal + ' out of ' + r.totalMax + ', below the 50% passing total of ' + r.needTotal + '.';
+      out.classList.add('st-risk'); return;
+    }
+    if (r.status === 'already-safe') {
+      out.textContent = 'You already meet both passing rules, even with 0 in the end-semester exam.';
+      out.classList.add('st-safe'); return;
+    }
+    const need = 'You need at least ' + r.needExam + ' out of ' + r.examMax + ' in the end-semester exam (' + r.needOutOf100 + ' out of 100).';
+    const extra = r.limitedBy === 'exam-floor'
+      ? ' Your internals already cover the 50% total; this is the 45% end-semester minimum.'
+      : ' That is the mark that also brings the overall total to at least 50%.';
+    out.textContent = need + extra;
+    out.classList.add(r.limitedBy === 'exam-floor' ? 'st-safe' : 'st-borderline');
+  }
+  $('pass-scheme').addEventListener('change', () => { state.pass.scheme = $('pass-scheme').value; save(); renderPass(); });
+  $('pass-internal').addEventListener('input', () => {
+    const v = $('pass-internal').value.trim();
+    state.pass.internal = v === '' ? null : parseNum(v);
+    save(); renderPass();
+  });
+  ['pass-imax', 'pass-emax'].forEach((id) => $(id).addEventListener('input', () => {
+    const im = parseNum($('pass-imax').value), em = parseNum($('pass-emax').value);
+    state.pass.internalMax = Number.isFinite(im) ? im : null;
+    state.pass.examMax = Number.isFinite(em) ? em : null;
+    save(); renderPass();
+  }));
+
   function renderAll() {
     $('today-label').textContent = now().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
     if (document.activeElement !== $('target')) $('target').value = state.attendance.target;
-    renderDash(); renderSubjects(); renderGpa(); renderTimetable(); renderExams();
+    renderDash(); renderSubjects(); renderGpa(); renderTimetable(); renderExams(); renderPass();
   }
   applyTheme();
   showTab(tab);
